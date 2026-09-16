@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>NETSCOPE | Network Packet Analyzer</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                ◈
+            </div>
+
+            <div>
+
+                <div class="brand-name">
+                    NETSCOPE
+                </div>
+
+                <div class="brand-subtitle">
+                    PACKET ANALYZER
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <nav>
+
+            <button
+                class="nav-item active"
+                onclick="showSection('dashboard')"
+            >
+                <span>▦</span>
+                Dashboard
+            </button>
+
+            <button
+                class="nav-item"
+                onclick="showSection('packets')"
+            >
+                <span>⌁</span>
+                Packets
+            </button>
+
+            <button
+                class="nav-item"
+                onclick="showSection('statistics')"
+            >
+                <span>◒</span>
+                Statistics
+            </button>
+
+            <button
+                class="nav-item"
+                onclick="showSection('system')"
+            >
+                <span>▣</span>
+                System
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="connection-indicator">
+
+                <span
+                    id="connectionDot"
+                    class="dot"
+                ></span>
+
+                <span id="connectionText">
+                    Ready
+                </span>
+
+            </div>
+
+            <div class="version">
+                NETSCOPE v1.0
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+
+    <main class="main">
+
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <div>
+
+                <div class="page-title">
+                    Network Packet Analyzer
+                </div>
+
+                <div class="page-subtitle">
+                    Real-time traffic monitoring and protocol analysis
+                </div>
+
+            </div>
+
+
+            <div class="topbar-right">
+
+                <div class="host-chip">
+
+                    <span class="host-icon">
+                        ◉
+                    </span>
+
+                    <span id="hostname">
+                        Detecting hostname...
+                    </span>
+
+                </div>
+
+                <div
+                    id="statusBadge"
+                    class="status-badge"
+                >
+                    IDLE
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- DASHBOARD -->
+
+        <section
+            id="dashboard"
+            class="section active"
+        >
+
+
+            <!-- CONTROL BAR -->
+
+            <div class="control-panel">
+
+                <div class="control-info">
+
+                    <div class="control-title">
+                        Capture Control
+                    </div>
+
+                    <div class="control-description">
+                        Monitor authorized network traffic from this computer.
+                    </div>
+
+                </div>
+
+
+                <div class="controls">
+
+                    <button
+                        id="startButton"
+                        class="btn btn-primary"
+                        onclick="startCapture()"
+                    >
+                        <span>▶</span>
+                        Start Capture
+                    </button>
+
+                    <button
+                        id="stopButton"
+                        class="btn btn-danger"
+                        onclick="stopCapture()"
+                        disabled
+                    >
+                        <span>■</span>
+                        Stop
+                    </button>
+
+                    <button
+                        class="btn btn-secondary"
+                        onclick="clearPackets()"
+                    >
+                        Clear
+                    </button>
+
+                    <button
+                        class="btn btn-secondary"
+                        onclick="exportPackets()"
+                    >
+                        Export CSV
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- STAT CARDS -->
+
+            <div class="stats-grid">
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon purple">
+                        ∑
+                    </div>
+
+                    <div>
+
+                        <div class="stat-label">
+                            TOTAL PACKETS
+                        </div>
+
+                        <div
+                            id="totalPackets"
+                            class="stat-value"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon blue">
+                        ⇄
+                    </div>
+
+                    <div>
+
+                        <div class="stat-label">
+                            TCP
+                        </div>
+
+                        <div
+                            id="tcpPackets"
+                            class="stat-value"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon cyan">
+                        ↔
+                    </div>
+
+                    <div>
+
+                        <div class="stat-label">
+                            UDP
+                        </div>
+
+                        <div
+                            id="udpPackets"
+                            class="stat-value"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon green">
+                        ◌
+                    </div>
+
+                    <div>
+
+                        <div class="stat-label">
+                            CAPTURE TIME
+                        </div>
+
+                        <div
+                            id="captureTime"
+                            class="stat-value"
+                        >
+                            0s
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- CONTENT GRID -->
+
+            <div class="content-grid">
+
+
+                <!-- LIVE PACKETS -->
+
+                <div class="panel packet-panel">
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <div class="panel-title">
+                                Live Packet Stream
+                            </div>
+
+                            <div class="panel-subtitle">
+                                Most recent captured packets
+                            </div>
+
+                        </div>
+
+                        <div class="live-indicator">
+
+                            <span
+                                id="liveDot"
+                                class="live-dot"
+                            ></span>
+
+                            LIVE
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="table-wrapper">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>ID</th>
+                                    <th>TIME</th>
+                                    <th>PROTOCOL</th>
+                                    <th>SOURCE</th>
+                                    <th>DESTINATION</th>
+                                    <th>SIZE</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody
+                                id="packetTable"
+                            >
+
+                                <tr>
+
+                                    <td
+                                        colspan="6"
+                                        class="empty"
+                                    >
+                                        No packets captured yet.
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RIGHT PANEL -->
+
+                <div class="side-panels">
+
+
+                    <!-- PROTOCOL -->
+
+                    <div class="panel">
+
+                        <div class="panel-header">
+
+                            <div>
+
+                                <div class="panel-title">
+                                    Protocol Distribution
+                                </div>
+
+                                <div class="panel-subtitle">
+                                    Current traffic
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            id="protocolChart"
+                            class="protocol-chart"
+                        >
+
+                            <div class="chart-empty">
+                                Waiting for packets...
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SYSTEM -->
+
+                    <div class="panel">
+
+                        <div class="panel-header">
+
+                            <div>
+
+                                <div class="panel-title">
+                                    Host Information
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="system-list">
+
+                            <div class="system-row">
+
+                                <span>
+                                    Hostname
+                                </span>
+
+                                <strong id="hostInfo">
+                                    -
+                                </strong>
+
+                            </div>
+
+                            <div class="system-row">
+
+                                <span>
+                                    Local IP
+                                </span>
+
+                                <strong id="ipInfo">
+                                    -
+                                </strong>
+
+                            </div>
+
+                            <div class="system-row">
+
+                                <span>
+                                    Operating System
+                                </span>
+
+                                <strong id="osInfo">
+                                    -
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- PACKETS -->
+
+        <section
+            id="packets"
+            class="section"
+        >
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>
+                        Packet Explorer
+                    </h2>
+
+                    <p>
+                        Search and inspect captured network packets.
+                    </p>
+
+                </div>
+
+
+                <input
+                    id="packetSearch"
+                    class="search"
+                    type="text"
+                    placeholder="Search IP, protocol or port..."
+                    oninput="filterPackets()"
+                >
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="table-wrapper large">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>ID</th>
+                                <th>TIME</th>
+                                <th>PROTOCOL</th>
+                                <th>SOURCE</th>
+                                <th>DESTINATION</th>
+                                <th>PORT</th>
+                                <th>SIZE</th>
+                                <th></th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody
+                            id="explorerTable"
+                        ></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- STATISTICS -->
+
+        <section
+            id="statistics"
+            class="section"
+        >
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>
+                        Traffic Statistics
+                    </h2>
+
+                    <p>
+                        Protocol-level network traffic analysis.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+
+                    <div class="stat-icon purple">
+                        Σ
+                    </div>
+
+                    <div>
+
+                        <div class="stat-label">
+                            TOTAL BYTES
+                        </div>
+
+                        <div
+                            id="totalBytes"
+                            class="stat-value"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon cyan">
+                        DNS
+                    </div>
+
+                    <div>
+
+                        <div class="stat-label">
+                            DNS
+                        </div>
+
+                        <div
+                            id="dnsPackets"
+                            class="stat-value"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon blue">
+                        WEB
+                    </div>
+
+                    <div>
+
+                        <div class="stat-label">
+                            HTTP / HTTPS
+                        </div>
+
+                        <div
+                            id="webPackets"
+                            class="stat-value"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon green">
+                        ICMP
+                    </div>
+
+                    <div>
+
+                        <div class="stat-label">
+                            ICMP
+                        </div>
+
+                        <div
+                            id="icmpPackets"
+                            class="stat-value"
+                        >
+                            0
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <div class="panel-title">
+                            Protocol Breakdown
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div
+                    id="statisticsChart"
+                    class="statistics-chart"
+                ></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- SYSTEM -->
+
+        <section
+            id="system"
+            class="section"
+        >
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>
+                        System Information
+                    </h2>
+
+                    <p>
+                        Automatically detected information about this computer.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="system-cards">
+
+                <div class="info-card">
+
+                    <span>
+                        HOSTNAME
+                    </span>
+
+                    <strong id="systemHostname">
+                        -
+                    </strong>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <span>
+                        LOCAL IP
+                    </span>
+
+                    <strong id="systemIP">
+                        -
+                    </strong>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <span>
+                        OPERATING SYSTEM
+                    </span>
+
+                    <strong id="systemOS">
+                        -
+                    </strong>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <span>
+                        ARCHITECTURE
+                    </span>
+
+                    <strong id="systemMachine">
+                        -
+                    </strong>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <span>
+                        PYTHON
+                    </span>
+
+                    <strong id="systemPython">
+                        -
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="notice">
+
+                <div class="notice-icon">
+                    !
+                </div>
+
+                <div>
+
+                    <strong>
+                        Authorized monitoring only
+                    </strong>
+
+                    <p>
+                        NETSCOPE is designed for defensive network
+                        monitoring on systems and networks you own
+                        or have explicit permission to analyze.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+</div>
+
+
+<!-- PACKET MODAL -->
+
+<div
+    id="packetModal"
+    class="modal"
+>
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <div>
+
+                <div class="modal-title">
+                    Packet Details
+                </div>
+
+                <div class="modal-subtitle">
+                    Detailed packet information
+                </div>
+
+            </div>
+
+            <button
+                class="close-button"
+                onclick="closeModal()"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div
+            id="packetDetails"
+            class="packet-details"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<script
+    src="{{ url_for('static', filename='app.js') }}"
+></script>
+
+</body>
+
+</html>
